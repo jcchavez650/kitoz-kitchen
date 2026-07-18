@@ -1,0 +1,19 @@
+[
+  {
+    "name": "orders",
+    "type": "base",
+    "listRule": "@request.auth.id != \"\"",
+    "viewRule": "@request.auth.id != \"\"",
+    "createRule": "",
+    "updateRule": "@request.auth.id != \"\"",
+    "deleteRule": "@request.auth.id != \"\"",
+    "schema": [
+      { "name": "items",          "type": "json",   "required": true,  "options": { "maxSize": 2000000 } },
+      { "name": "customer_name",  "type": "text",   "required": true,  "options": {} },
+      { "name": "customer_phone", "type": "text",   "required": false, "options": {} },
+      { "name": "notes",          "type": "text",   "required": false, "options": {} },
+      { "name": "total",          "type": "number", "required": false, "options": {} },
+      { "name": "status",         "type": "select", "required": true,  "options": { "maxSelect": 1, "values": ["new", "preparing", "ready", "done"] } }
+    ]
+  }
+]

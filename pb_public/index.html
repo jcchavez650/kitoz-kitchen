@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitoz Burger — Kitchen</title>
+  <meta name="theme-color" content="#0c0c0e" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+
+  <!-- Login -->
+  <div class="login" id="login">
+    <form class="login-card" id="loginForm">
+      <div class="logo">🍔 <span>KITOZ</span> KITCHEN</div>
+      <p class="login-sub">Staff sign in</p>
+      <input id="email" type="email" placeholder="Email" autocomplete="username" required />
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required />
+      <button type="submit" class="btn" id="loginBtn">Sign in</button>
+      <p class="login-err" id="loginErr" hidden></p>
+    </form>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="app" id="app" hidden>
+    <header class="topbar">
+      <div class="brand">🍔 <b>KITOZ</b> KITCHEN</div>
+      <div class="stats">
+        <div><strong id="statCount">0</strong><span>orders today</span></div>
+        <div><strong id="statRevenue">$0</strong><span>revenue today</span></div>
+        <div class="conn" id="conn" title="Live connection"><span class="dot"></span><span id="connText">Live</span></div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn ghost" id="soundToggle" title="Toggle sound">🔔 On</button>
+        <button class="btn ghost" id="logout">Sign out</button>
+      </div>
+    </header>
+
+    <main class="board">
+      <section class="col" data-col="new">
+        <h2>🔴 New <span class="count" id="count-new">0</span></h2>
+        <div class="cards" id="col-new"></div>
+      </section>
+      <section class="col" data-col="preparing">
+        <h2>🟡 Preparing <span class="count" id="count-preparing">0</span></h2>
+        <div class="cards" id="col-preparing"></div>
+      </section>
+      <section class="col" data-col="ready">
+        <h2>🟢 Ready <span class="count" id="count-ready">0</span></h2>
+        <div class="cards" id="col-ready"></div>
+      </section>
+    </main>
+
+    <div class="empty" id="empty" hidden>No active orders. New orders appear here automatically. 🍔</div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
