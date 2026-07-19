@@ -34,11 +34,21 @@ $("#refresh").addEventListener("click", loadReport);
 const dayStart = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 const baseName = (n) => String(n || "").split(/ — | \(/)[0].trim();
 
+// Daily-reset sequential order numbers (#1, #2, … per day)
+function seqNumbers(orders) {
+  const sorted = [...orders].sort((a, b) => new Date(a.created) - new Date(b.created));
+  const perDay = {}, map = {};
+  sorted.forEach((o) => { const k = new Date(o.created).toDateString(); perDay[k] = (perDay[k] || 0) + 1; map[o.id] = perDay[k]; });
+  return map;
+}
+let allOrders = [], adminSeq = {};
+
 /* ---- Report ------------------------------------------------------------ */
 async function loadReport() {
   let orders = [];
   try { orders = await pb.collection("orders").getFullList({ sort: "-created" }); }
   catch (e) { return; }
+  allOrders = orders; adminSeq = seqNumbers(orders);
 
   const now = Date.now();
   const t0 = dayStart(now).getTime();
@@ -54,9 +64,53 @@ async function loadReport() {
   set("revAll", money0(sum(orders)));  set("ordAll", `${orders.length} orders · avg ${money(avg)}`);
 
   renderChart(orders);
+  renderHours(orders);
+  renderWeekday(orders);
   renderTopItems(last30);
   renderRecent(orders.slice(0, 12));
 }
+
+function renderHours(orders) {
+  const hours = new Array(24).fill(0);
+  orders.forEach((o) => (hours[new Date(o.created).getHours()] += 1));
+  let lo = 10, hi = 22;
+  hours.forEach((c, h) => { if (c) { lo = Math.min(lo, h); hi = Math.max(hi, h); } });
+  const max = Math.max(1, ...hours);
+  const slots = [];
+  for (let h = lo; h <= hi; h++) slots.push({ h, c: hours[h] });
+  $("#hoursChart").innerHTML = slots.map((s) => {
+    const ht = Math.round((s.c / max) * 100);
+    const lbl = (s.h % 12 || 12) + (s.h < 12 ? "a" : "p");
+    return `<div class="bar" style="height:${Math.max(ht, 1)}%" title="${lbl}: ${s.c} orders"><b>${s.c || ""}</b><span>${lbl}</span></div>`;
+  }).join("");
+}
+
+function renderWeekday(orders) {
+  const names = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  const rev = new Array(7).fill(0);
+  orders.forEach((o) => (rev[new Date(o.created).getDay()] += o.total || 0));
+  const max = Math.max(1, ...rev);
+  $("#weekdayChart").innerHTML = rev.map((r, i) => {
+    const ht = Math.round((r / max) * 100);
+    return `<div class="bar" style="height:${Math.max(ht, 1)}%" title="${names[i]}: ${money(r)}"><b>${r ? "$" + Math.round(r) : ""}</b><span>${names[i]}</span></div>`;
+  }).join("");
+}
+
+/* ---- CSV export -------------------------------------------------------- */
+function csvCell(v) { v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function exportCSV() {
+  const rows = [["Order#", "Date", "Customer", "Phone", "Items", "Total", "Status"]];
+  allOrders.forEach((o) => {
+    const items = (Array.isArray(o.items) ? o.items : []).map((i) => `${i.qty || 1}x ${i.name}`).join("; ");
+    rows.push([adminSeq[o.id] || "", new Date(o.created).toLocaleString(), o.customer_name || "", o.customer_phone || "", items, (o.total || 0).toFixed(2), o.status]);
+  });
+  const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = `kitoz-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+$("#exportBtn").addEventListener("click", exportCSV);
 function set(id, v) { $("#" + id).textContent = v; }
 
 function renderChart(orders) {
@@ -94,9 +148,9 @@ function renderRecent(orders) {
     ? orders.map((o) => {
         const n = Array.isArray(o.items) ? o.items.reduce((s, i) => s + (i.qty || 1), 0) : 0;
         const t = new Date(o.created).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-        return `<tr><td>${t}</td><td>${esc(o.customer_name || "Guest")}</td><td class="num">${n}</td><td class="num">${money(o.total)}</td><td><span class="pill s-${o.status}">${o.status}</span></td></tr>`;
+        return `<tr><td class="num">#${adminSeq[o.id] || ""}</td><td>${t}</td><td>${esc(o.customer_name || "Guest")}</td><td class="num">${n}</td><td class="num">${money(o.total)}</td><td><span class="pill s-${o.status}">${o.status}</span></td></tr>`;
       }).join("")
-    : `<tr><td colspan="5" style="color:var(--muted)">No orders yet.</td></tr>`;
+    : `<tr><td colspan="6" style="color:var(--muted)">No orders yet.</td></tr>`;
 }
 
 /* ---- Enter ------------------------------------------------------------- */

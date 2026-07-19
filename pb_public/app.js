@@ -63,13 +63,14 @@ async function openHistory() {
   try {
     const res = await pb.collection("orders").getList(1, 100, { sort: "-created" });
     const items = res.items || [];
+    const hmap = seqNumbers(items);
     $("#histBody").innerHTML = items.length
       ? items.map((o) => {
           const its = Array.isArray(o.items) ? o.items : [];
           const line = its.map((i) => `${i.qty || 1}× ${esc(i.name)}`).join(", ");
           const t = new Date(o.created).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
           return `<div class="hist-item s-${o.status}">
-            <div class="hist-top"><span class="ticket">#${esc(o.id).slice(-4).toUpperCase()}</span>
+            <div class="hist-top"><span class="ticket">#${hmap[o.id] != null ? hmap[o.id] : esc(o.id).slice(-4).toUpperCase()}</span>
               <span class="pill s-${o.status}">${o.status}</span><span class="hist-time">${t}</span></div>
             <div class="hist-cust">${esc(o.customer_name || "Guest")}${o.customer_phone ? " · " + esc(o.customer_phone) : ""}</div>
             <div class="hist-items">${line}</div>
@@ -105,7 +106,7 @@ function cardHTML(o) {
   return `
     <div class="card s-${o.status} flash" data-id="${o.id}">
       <div class="card-head">
-        <span class="ticket">#${esc(o.id).slice(-4).toUpperCase()}</span>
+        <span class="ticket">${ticketOf(o)}</span>
         <span class="ago" data-created="${o.created}">${timeAgo(o.created)}</span>
       </div>
       <div class="cust">${esc(o.customer_name || "Guest")} ${phone}</div>
@@ -132,28 +133,36 @@ function render(orders) {
   setTimeout(() => document.querySelectorAll(".card.flash").forEach((c) => c.classList.remove("flash")), 1100);
 }
 
+/* ---- Sequential daily order numbers ------------------------------------ */
+// Numbers reset each day: the 1st order of the day is #1, then #2, ...
+function seqNumbers(orders) {
+  const sorted = [...orders].sort((a, b) => new Date(a.created) - new Date(b.created));
+  const perDay = {}, map = {};
+  sorted.forEach((o) => { const k = new Date(o.created).toDateString(); perDay[k] = (perDay[k] || 0) + 1; map[o.id] = perDay[k]; });
+  return map;
+}
+let seqMap = {};
+function ticketOf(o) { return "#" + (seqMap[o.id] != null ? seqMap[o.id] : esc(o.id).slice(-4).toUpperCase()); }
+
 /* ---- Data -------------------------------------------------------------- */
 let knownIds = null;
-async function loadActive() {
-  try {
-    const list = await pb.collection("orders").getFullList({ filter: 'status != "done"', sort: "created" });
-    setConn(true);
-    // Ding when a genuinely new order appears (works via realtime OR polling)
-    if (knownIds) {
-      const fresh = list.filter((o) => o.status === "new" && !knownIds.has(o.id));
-      if (fresh.length) ding();
-    }
-    knownIds = new Set(list.map((o) => o.id));
-    render(list);
-  } catch (e) { setConn(false); }
-}
-async function loadStats() {
+async function refresh() {
   const start = new Date(); start.setHours(0, 0, 0, 0);
   const iso = start.toISOString().replace("T", " ");
   try {
-    const today = await pb.collection("orders").getFullList({ filter: `created >= "${iso}"` });
+    const today = await pb.collection("orders").getFullList({ filter: `created >= "${iso}"`, sort: "created" });
+    setConn(true);
+    seqMap = seqNumbers(today);
     $("#statCount").textContent = today.length;
-  } catch (e) {}
+    const active = today.filter((o) => o.status !== "done");
+    // Ding when a genuinely new order appears (works via realtime OR polling)
+    if (knownIds) {
+      const fresh = active.filter((o) => o.status === "new" && !knownIds.has(o.id));
+      if (fresh.length) ding();
+    }
+    knownIds = new Set(active.map((o) => o.id));
+    render(active);
+  } catch (e) { setConn(false); }
 }
 function setConn(ok) {
   $("#conn").classList.toggle("down", !ok);
@@ -182,21 +191,20 @@ document.addEventListener("click", async (e) => {
 
 /* ---- Live -------------------------------------------------------------- */
 let refreshT = null;
-function scheduleRefresh() { clearTimeout(refreshT); refreshT = setTimeout(() => { loadActive(); loadStats(); }, 120); }
+function scheduleRefresh() { clearTimeout(refreshT); refreshT = setTimeout(refresh, 120); }
 
 async function start() {
   showApp(true);
   // Show the Reports link only to admins/owners
   const role = pb.authStore.model && pb.authStore.model.role;
   if (role === "admin" || role === "owner") $("#reportsLink").hidden = false;
-  await loadActive();
-  await loadStats();
+  await refresh();
   // Realtime push (instant) — best effort; some hosts drop SSE over HTTP/2
   try {
     await pb.collection("orders").subscribe("*", () => scheduleRefresh());
   } catch (e) { setConn(false); }
   // Polling fallback so the board stays live even if realtime SSE fails
-  setInterval(() => { loadActive(); loadStats(); }, 8000);
+  setInterval(refresh, 8000);
   // keep "Xm ago" labels fresh
   setInterval(() => document.querySelectorAll(".ago").forEach((el) => (el.textContent = timeAgo(el.getAttribute("data-created")))), 30000);
 }

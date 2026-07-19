@@ -28,6 +28,7 @@
       <div class="brand">🍔 <b>KITOZ</b> ADMIN</div>
       <div class="topbar-actions" style="margin-left:auto">
         <a class="btn ghost" href="index.html">👨‍🍳 Kitchen</a>
+        <button class="btn ghost" id="exportBtn">⬇ Export CSV</button>
         <button class="btn ghost" id="refresh">↻ Refresh</button>
         <button class="btn ghost" id="logout">Sign out</button>
       </div>
@@ -55,13 +56,24 @@
 
       <div class="report-cols">
         <section class="panel">
+          <h3>Busiest hours (all time)</h3>
+          <div class="chart" id="hoursChart"></div>
+        </section>
+        <section class="panel">
+          <h3>Revenue by weekday</h3>
+          <div class="chart" id="weekdayChart"></div>
+        </section>
+      </div>
+
+      <div class="report-cols">
+        <section class="panel">
           <h3>Top items (last 30 days)</h3>
           <table><thead><tr><th>Item</th><th class="num">Sold</th><th class="num">Revenue</th></tr></thead>
             <tbody id="topItems"></tbody></table>
         </section>
         <section class="panel">
           <h3>Recent orders</h3>
-          <table><thead><tr><th>Time</th><th>Customer</th><th class="num">Items</th><th class="num">Total</th><th>Status</th></tr></thead>
+          <table><thead><tr><th class="num">#</th><th>Time</th><th>Customer</th><th class="num">Items</th><th class="num">Total</th><th>Status</th></tr></thead>
             <tbody id="recent"></tbody></table>
         </section>
       </div>
