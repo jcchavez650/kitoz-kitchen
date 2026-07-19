@@ -101,10 +101,18 @@ function render(orders) {
 }
 
 /* ---- Data -------------------------------------------------------------- */
+let knownIds = null;
 async function loadActive() {
   try {
     const list = await pb.collection("orders").getFullList({ filter: 'status != "done"', sort: "created" });
-    setConn(true); render(list);
+    setConn(true);
+    // Ding when a genuinely new order appears (works via realtime OR polling)
+    if (knownIds) {
+      const fresh = list.filter((o) => o.status === "new" && !knownIds.has(o.id));
+      if (fresh.length) ding();
+    }
+    knownIds = new Set(list.map((o) => o.id));
+    render(list);
   } catch (e) { setConn(false); }
 }
 async function loadStats() {
@@ -149,13 +157,12 @@ async function start() {
   showApp(true);
   await loadActive();
   await loadStats();
+  // Realtime push (instant) — best effort; some hosts drop SSE over HTTP/2
   try {
-    await pb.collection("orders").subscribe("*", (e) => {
-      if (e.action === "create" && e.record.status !== "done") ding();
-      scheduleRefresh();
-    });
-    setConn(true);
+    await pb.collection("orders").subscribe("*", () => scheduleRefresh());
   } catch (e) { setConn(false); }
+  // Polling fallback so the board stays live even if realtime SSE fails
+  setInterval(() => { loadActive(); loadStats(); }, 8000);
   // keep "Xm ago" labels fresh
   setInterval(() => document.querySelectorAll(".ago").forEach((el) => (el.textContent = timeAgo(el.getAttribute("data-created")))), 30000);
 }
