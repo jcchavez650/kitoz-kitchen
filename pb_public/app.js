@@ -121,7 +121,6 @@ async function loadStats() {
   try {
     const today = await pb.collection("orders").getFullList({ filter: `created >= "${iso}"` });
     $("#statCount").textContent = today.length;
-    $("#statRevenue").textContent = money(today.reduce((s, o) => s + (o.total || 0), 0));
   } catch (e) {}
 }
 function setConn(ok) {
@@ -155,6 +154,9 @@ function scheduleRefresh() { clearTimeout(refreshT); refreshT = setTimeout(() =>
 
 async function start() {
   showApp(true);
+  // Show the Reports link only to admins/owners
+  const role = pb.authStore.model && pb.authStore.model.role;
+  if (role === "admin" || role === "owner") $("#reportsLink").hidden = false;
   await loadActive();
   await loadStats();
   // Realtime push (instant) — best effort; some hosts drop SSE over HTTP/2

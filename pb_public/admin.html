@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitoz Burger — Admin</title>
+  <meta name="theme-color" content="#0c0c0e" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+
+  <!-- Login -->
+  <div class="login" id="login">
+    <form class="login-card" id="loginForm">
+      <div class="logo">🍔 <span>KITOZ</span> ADMIN</div>
+      <p class="login-sub">Owner / manager sign in</p>
+      <input id="email" type="email" placeholder="Email" autocomplete="username" required />
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required />
+      <button type="submit" class="btn" id="loginBtn">Sign in</button>
+      <p class="login-err" id="loginErr" hidden></p>
+    </form>
+  </div>
+
+  <!-- App -->
+  <div class="app" id="app" hidden>
+    <header class="topbar">
+      <div class="brand">🍔 <b>KITOZ</b> ADMIN</div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <a class="btn ghost" href="index.html">👨‍🍳 Kitchen</a>
+        <button class="btn ghost" id="refresh">↻ Refresh</button>
+        <button class="btn ghost" id="logout">Sign out</button>
+      </div>
+    </header>
+
+    <!-- Non-admins see this -->
+    <div class="denied" id="denied" hidden>
+      <h2>🔒 Admins only</h2>
+      <p>This account doesn't have admin access. Ask the owner to set your role to <b>admin</b>.</p>
+    </div>
+
+    <!-- Reporting -->
+    <main id="report" hidden>
+      <div class="tiles">
+        <div class="tile"><div class="label">Today</div><div class="val" id="revToday">$0</div><div class="sub" id="ordToday">0 orders</div></div>
+        <div class="tile"><div class="label">Last 7 days</div><div class="val" id="rev7">$0</div><div class="sub" id="ord7">0 orders</div></div>
+        <div class="tile"><div class="label">Last 30 days</div><div class="val" id="rev30">$0</div><div class="sub" id="ord30">0 orders</div></div>
+        <div class="tile"><div class="label">All time</div><div class="val" id="revAll">$0</div><div class="sub" id="ordAll">0 orders</div></div>
+      </div>
+
+      <section class="panel">
+        <h3>Daily revenue — last 14 days</h3>
+        <div class="chart" id="chart"></div>
+      </section>
+
+      <div class="report-cols">
+        <section class="panel">
+          <h3>Top items (last 30 days)</h3>
+          <table><thead><tr><th>Item</th><th class="num">Sold</th><th class="num">Revenue</th></tr></thead>
+            <tbody id="topItems"></tbody></table>
+        </section>
+        <section class="panel">
+          <h3>Recent orders</h3>
+          <table><thead><tr><th>Time</th><th>Customer</th><th class="num">Items</th><th class="num">Total</th><th>Status</th></tr></thead>
+            <tbody id="recent"></tbody></table>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
