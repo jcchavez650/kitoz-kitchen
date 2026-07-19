@@ -55,6 +55,38 @@ $("#soundToggle").addEventListener("click", () => {
   soundOn = !soundOn; $("#soundToggle").textContent = soundOn ? "🔔 On" : "🔕 Off"; initAudio();
 });
 
+/* ---- Order history ----------------------------------------------------- */
+async function openHistory() {
+  $("#histOverlay").hidden = false;
+  $("#histPanel").classList.add("open");
+  $("#histBody").innerHTML = `<p class="hist-empty">Loading…</p>`;
+  try {
+    const res = await pb.collection("orders").getList(1, 100, { sort: "-created" });
+    const items = res.items || [];
+    $("#histBody").innerHTML = items.length
+      ? items.map((o) => {
+          const its = Array.isArray(o.items) ? o.items : [];
+          const line = its.map((i) => `${i.qty || 1}× ${esc(i.name)}`).join(", ");
+          const t = new Date(o.created).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+          return `<div class="hist-item s-${o.status}">
+            <div class="hist-top"><span class="ticket">#${esc(o.id).slice(-4).toUpperCase()}</span>
+              <span class="pill s-${o.status}">${o.status}</span><span class="hist-time">${t}</span></div>
+            <div class="hist-cust">${esc(o.customer_name || "Guest")}${o.customer_phone ? " · " + esc(o.customer_phone) : ""}</div>
+            <div class="hist-items">${line}</div>
+            <div class="hist-total">${money(o.total)}</div>
+          </div>`;
+        }).join("")
+      : `<p class="hist-empty">No orders yet.</p>`;
+  } catch (e) {
+    $("#histBody").innerHTML = `<p class="hist-empty">Couldn't load history.</p>`;
+  }
+}
+function closeHistory() { $("#histPanel").classList.remove("open"); setTimeout(() => ($("#histOverlay").hidden = true), 250); }
+$("#historyBtn").addEventListener("click", openHistory);
+$("#histClose").addEventListener("click", closeHistory);
+$("#histOverlay").addEventListener("click", closeHistory);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeHistory(); });
+
 /* ---- Rendering --------------------------------------------------------- */
 function timeAgo(iso) {
   const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));

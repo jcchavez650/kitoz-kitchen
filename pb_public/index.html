@@ -6,7 +6,7 @@
   <title>Kitoz Burger — Kitchen</title>
   <meta name="theme-color" content="#0c0c0e" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link rel="stylesheet" href="app.css?v=2" />
+  <link rel="stylesheet" href="app.css?v=3" />
 </head>
 <body>
 
@@ -31,7 +31,8 @@
         <div class="conn" id="conn" title="Live connection"><span class="dot"></span><span id="connText">Live</span></div>
       </div>
       <div class="topbar-actions">
-        <a class="btn ghost" id="reportsLink" href="admin.html" hidden>📊 Reports</a>
+        <button class="btn ghost" id="historyBtn">🕘 History</button>
+        <a class="btn ghost" id="reportsLink" href="admin.html" hidden>📊 Admin</a>
         <button class="btn ghost" id="soundToggle" title="Toggle sound">🔔 On</button>
         <button class="btn ghost" id="logout">Sign out</button>
       </div>
@@ -54,6 +55,16 @@
 
     <div class="empty" id="empty" hidden>No active orders. New orders appear here automatically. 🍔</div>
   </div>
+
+  <!-- Order history drawer -->
+  <div class="hist-overlay" id="histOverlay" hidden></div>
+  <aside class="hist-panel" id="histPanel" aria-hidden="true">
+    <div class="hist-head">
+      <h3>Order history</h3>
+      <button class="hist-close" id="histClose" aria-label="Close">✕</button>
+    </div>
+    <div class="hist-body" id="histBody"></div>
+  </aside>
 
   <script type="module" src="app.js"></script>
 </body>
